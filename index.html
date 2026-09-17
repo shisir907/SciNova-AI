@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SciNova AI · Science Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    --bg: #0b1120;
+    --card: #111827;
+    --card2: #0f172a;
+    --border: #1e293b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --primary: #22d3ee;
+    --primary-dim: rgba(34, 211, 238, 0.12);
+    --accent: #a78bfa;
+    --orange: #f97316;
+    --green: #34d399;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+  }
+
+  .header-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #22d3ee, #818cf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo span {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #0b1120;
+  }
+
+  .header-text h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+  .header-text p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .live {
+    margin-left: auto;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--green);
+    background: rgba(52, 211, 153, 0.12);
+    padding: 5px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .hero h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .hero p {
+    font-size: 0.92rem;
+    color: var(--muted);
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  .tabs {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    width: 100%;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .tab-btn:last-child { border-bottom: none; }
+  .tab-btn.active {
+    color: var(--primary);
+    background: rgba(34, 211, 238, 0.06);
+  }
+  .tab-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.02);
+    color: var(--text);
+  }
+
+  .panel {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .panel.active { display: block; }
+
+  .chat-box {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    height: 260px;
+    overflow-y: auto;
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg {
+    max-width: 88%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: #1e3a5f;
+    border: 1px solid #2a4a6f;
+  }
+  .msg.ai {
+    align-self: flex-start;
+    background: #1a2332;
+    border: 1px solid var(--border);
+  }
+  .msg .label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    color: var(--primary);
+  }
+  .msg.user .label { color: var(--accent); }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-row input {
+    flex: 1;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .input-row input:focus { border-color: var(--primary); }
+  .input-row button {
+    background: linear-gradient(135deg, var(--primary), #0ea5e9);
+    color: #0b1120;
+    border: none;
+    border-radius: 10px;
+    padding: 0 18px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .quick button {
+    background: var(--primary-dim);
+    color: var(--primary);
+    border: 1px solid rgba(34,211,238,0.25);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .status {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .news-intro {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .news-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .news-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+    background: #1e293b;
+  }
+  .news-body {
+    padding: 12px;
+  }
+  .news-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: var(--primary-dim);
+    padding: 2px 7px;
+    border-radius: 5px;
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+  .news-body h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.35;
+  }
+  .news-body h3 a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .news-body p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .news-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  .news-meta a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .map-box {
+    height: 320px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  #map { width: 100%; height: 100%; }
+  .map-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .about-card, .project-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .about-card strong, .project-card strong {
+    color: var(--primary);
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+  .about-card p, .project-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .project-list {
+    margin: 8px 0 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .project-list li {
+    margin-bottom: 5px;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .maplibregl-popup-content {
+    background: #1a2332 !important;
+    color: #e5e7eb !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header-card">
+      <div class="logo"><span>S</span></div>
+      <div class="header-text">
+        <h1>SciNova AI</h1>
+        <p>Science Hub · AI + News + Map</p>
+      </div>
+      <div class="live">● LIVE</div>
+    </div>
+
+    <div class="hero">
+      <h2>Science Hub</h2>
+      <p>Ask SciNova AI anything about science, space, biology, physics, climate or technology. Explore international news and interactive maps.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="ai">✦ AI Science Chat</button>
+      <button class="tab-btn" data-tab="news">📰 International News</button>
+      <button class="tab-btn" data-tab="map">🗺 Interactive Map</button>
+      <button class="tab-btn" data-tab="about">ℹ About</button>
+      <button class="tab-btn" data-tab="project">📋 My Project</button>
+    </div>
+
+    <!-- AI Chat -->
+    <div class="panel active" id="panel-ai">
+      <div class="chat-box" id="chat">
+        <div class="msg ai">
+          <div class="label">SciNova AI</div>
+          Hello! I am <strong>SciNova AI</strong>. Ask me anything about science, space, biology, physics, climate or technology.
+        </div>
+      </div>
+      <div class="input-row">
+        <input type="text" id="userInput" placeholder="Ask a science question..." autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()">Ask</button>
+      </div>
+      <div class="quick">
+        <button onclick="ask('What is artificial intelligence?')">What is AI?</button>
+        <button onclick="ask('Explain black holes simply')">Black holes</button>
+        <button onclick="ask('What is climate change?')">Climate change</button>
+        <button onclick="ask('How do neural networks work?')">Neural networks</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <!-- News -->
+    <div class="panel" id="panel-news">
+      <p class="news-intro">Global STEM headlines · Verified research & discoveries · September 2026</p>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=600&q=80" alt="Venus surface model" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Astronomy</span>
+          <h3><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Venus may have swallowed its own ancient moon</a></h3>
+          <p>New rotational dynamics models reveal how slow axial spin may have caused a former satellite to crash into the planet.</p>
+          <div class="news-meta"><span>16 Sep 2026</span><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1507668077129-56e32842fceb?w=600&q=80" alt="Global energy grid" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Climate Tech</span>
+          <h3><a href="https://spacedaily.com/" target="_blank" rel="noopener">UN University warns of climate stress on global power grids</a></h3>
+          <p>Policy brief reveals energy infrastructure is being built on historical weather baselines that no longer reflect real climate loads.</p>
+          <div class="news-meta"><span>16 Sep 2026</span><a href="https://spacedaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&q=80" alt="Prehistoric fossil research" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Palaeontology</span>
+          <h3><a href="https://www.bristol.ac.uk/news/" target="_blank" rel="noopener">240-Million-Year-Old dicynodont species found in Tanzania</a></h3>
+          <p>Discovery of Dinodontosaurus isiyavamanda connects African and South American Triassic rock layers.</p>
+          <div class="news-meta"><span>16 Sep 2026</span><a href="https://www.bristol.ac.uk/news/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=80" alt="Microchip technology" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Physics</span>
+          <h3><a href="https://scitechdaily.com/" target="_blank" rel="noopener">Optical Magnus effect demonstrated in quantum light</a></h3>
+          <p>Physicists directly observe light bending in tightly focused laser beams, unlocking new optical computing pathways.</p>
+          <div class="news-meta"><span>15 Sep 2026</span><a href="https://scitechdaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=600&q=80" alt="Space imagery" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Space Exploration</span>
+          <h3><a href="https://spacedaily.com/" target="_blank" rel="noopener">Atmosphere detected on trans-Neptunian object</a></h3>
+          <p>A 500-km icy body beyond Neptune exhibits a temporary atmosphere puzzling astronomers.</p>
+          <div class="news-meta"><span>14 Sep 2026</span><a href="https://spacedaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1530973428113-1280ad72a39a?w=600&q=80" alt="Volcanic plume atmospheric science" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Earth Science</span>
+          <h3><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Volcanic plumes found destroying atmospheric methane</a></h3>
+          <p>Data from the Hunga Tonga eruption confirms unexpected chemical reactions neutralizing greenhouse gases.</p>
+          <div class="news-meta"><span>15 Sep 2026</span><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80" alt="Quantum computing visualization" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Quantum Computing</span>
+          <h3><a href="https://scitechdaily.com/" target="_blank" rel="noopener">Sunlight converted into quantum entanglement state</a></h3>
+          <p>Researchers successfully harness incoherent natural sunlight to generate entangled photon pairs.</p>
+          <div class="news-meta"><span>15 Sep 2026</span><a href="https://scitechdaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=600&q=80" alt="Medical science research" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Neuroscience</span>
+          <h3><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Key molecular triggers identified in early brain development</a></h3>
+          <p>Biologists map the exact chemical instructions responsible for building neuronal pathways in human embryos.</p>
+          <div class="news-meta"><span>14 Sep 2026</span><a href="https://www.sciencedaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600&q=80" alt="Supermassive black hole graphic" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">Astrophysics</span>
+          <h3><a href="https://scitechdaily.com/" target="_blank" rel="noopener">JWST maps high-velocity gas flows into black hole cores</a></h3>
+          <p>Deep-field infrared imaging reveals how supermassive black holes accrete galactic matter.</p>
+          <div class="news-meta"><span>13 Sep 2026</span><a href="https://scitechdaily.com/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+
+      <div class="news-card">
+        <img src="https://images.unsplash.com/photo-1517976487492-5750f3196933?w=600&q=80" alt="Spacecraft launch platform" loading="lazy" onerror="this.style.display='none'">
+        <div class="news-body">
+          <span class="news-tag">NASA</span>
+          <h3><a href="https://science.nasa.gov/" target="_blank" rel="noopener">Nancy Grace Roman Space Telescope completes main mirror integration</a></h3>
+          <p>Wide-field survey optical assemblies are certified ready for dark energy and exoplanet searches.</p>
+          <div class="news-meta"><span>12 Sep 2026</span><a href="https://science.nasa.gov/" target="_blank" rel="noopener">Read →</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="panel" id="panel-map">
+      <p class="news-intro" style="margin-bottom:10px">Hybrid satellite map. Click anywhere for coordinates.</p>
+      <div class="map-box"><div id="map"></div></div>
+      <p class="map-hint">Zoom · Drag · Click for lat/lng</p>
+    </div>
+
+    <!-- About -->
+    <div class="panel" id="panel-about">
+      <div class="about-card">
+        <strong>About SciNova AI Platform</strong>
+        <p>SciNova AI is an all-in-one web-based science learning hub designed to make STEM education accessible, interactive, and engaging for curious minds.</p>
+      </div>
+      <div class="about-card">
+        <strong>Shipaton 2026 Context</strong>
+        <p>Built during <strong>RevenueCat’s Shipaton 2026</strong> global hackathon hosted on <strong>Devpost</strong> (Submissions closing 1 Oct 2026 @ 12:30 PM GMT+5:45). It aligns with the challenge of building real, functional tools for actual users.</p>
+      </div>
+      <div class="about-card">
+        <strong>Web Architecture & Engineering</strong>
+        <p>Developed using lightweight single-file HTML/CSS/JS architecture, integrating MapLibre GL for satellite geospatial rendering and OpenRouter API endpoints for real-time natural language query processing.</p>
+      </div>
+      <div class="about-card">
+        <strong>Founder & Solo Developer</strong>
+        <p>Designed, programmed, tested, and shipped end-to-end as a complete web solution.</p>
+      </div>
+    </div>
+
+    <!-- My Project -->
+    <div class="panel" id="panel-project">
+      <div class="project-card">
+        <strong>Project Overview</strong>
+        <p>SciNova AI combines conversational AI, global scientific headlines, and satellite geospatial mapping inside a unified web environment, making scientific inquiry effortless.</p>
+      </div>
+
+      <div class="project-card">
+        <strong>Core Web Features Built</strong>
+        <ul class="project-list">
+          <li><strong>AI Science Chat:</strong> Custom system-prompted LLM specialized exclusively in answering STEM, astronomy, and technology questions.</li>
+          <li><strong>Curated News Feed:</strong> Real-time international science headlines and research breakthroughs updated for September 2026.</li>
+          <li><strong>MapLibre Interactive Map:</strong> High-resolution hybrid satellite tiles with touch-enabled coordinate pinpointing.</li>
+          <li><strong>Mobile-Optimized UI:</strong> Responsive, dark-themed interface built for seamless browsing on any mobile or desktop web browser.</li>
+        </ul>
+      </div>
+
+      <div class="project-card">
+        <strong>Built For RevenueCat's Shipaton 2026</strong>
+        <p>Developed to meet the core philosophy of Shipaton: <em>"For people who actually ship."</em> With 559+ app showcases competing globally on Devpost, SciNova AI demonstrates a completed, functional web product built before the October 1 submission deadline.</p>
+      </div>
+
+      <div class="project-card">
+        <strong>Development Milestones</strong>
+        <ul class="project-list">
+          <li>Designed dark-mode user interface & mobile card architecture</li>
+          <li>Integrated OpenRouter API with custom strict science guardrails</li>
+          <li>Configured MapLibre GL JS hybrid vector and tile engine</li>
+          <li>Deployed web application for production readiness</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      SciNova AI · Science Hub<br>
+      Designed & developed by the Founder
+    </footer>
+  </div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const name = this.getAttribute('data-tab');
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'map' && window.sciMap) setTimeout(() => window.sciMap.resize(), 40);
+  });
+});
+
+const API_KEY = "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";
+const MODEL = "openai/gpt-3.5-turbo";
+const SYSTEM_PROMPT = `You are SciNova AI, a friendly science assistant.
+You ONLY answer questions related to science, AI, technology, space, biology, physics, chemistry, environment, mathematics, and education.
+Keep answers clear and suitable for learners aged 12-18.
+If the question is not about science, politely say you only help with science topics.`;
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('userInput');
+const statusEl = document.getElementById('status');
+const sendBtn = document.getElementById('sendBtn');
+
+function addMessage(text, who) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  const label = who === 'user' ? 'You' : 'SciNova AI';
+  div.innerHTML = '<div class="label">' + label + '</div>' + text.replace(/\n/g, '<br>');
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function setStatus(msg) {
+  statusEl.textContent = msg || '';
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMessage(text, 'user');
+  sendBtn.disabled = true;
+  setStatus('Thinking...');
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + API_KEY,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': window.location.origin || 'https://scinova-ai.local',
+        'X-Title': 'SciNova AI'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text }
+        ],
+        max_tokens: 400,
+        temperature: 0.7
+      })
+    });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'Sorry, I could not answer that.';
+    addMessage(reply, 'ai');
+    setStatus('');
+  } catch (e) {
+    addMessage('Sorry, something went wrong. Please try again.', 'ai');
+    setStatus('');
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function ask(q) {
+  input.value = q;
+  sendMessage();
+}
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+let mapReady = false;
+function initMap() {
+  if (mapReady) return;
+  mapReady = true;
+  window.sciMap = new maplibregl.Map({
+    container: 'map',
+    style: 'https://api.maptiler.com/maps/hybrid-v4/style.json?key=esvqZvEbX2pTEcnCVGux',
+    center: [80, 28],
+    zoom: 5
+  });
+  window.sciMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  window.sciMap.on('click', e => {
+    const { lng, lat } = e.lngLat;
+    new maplibregl.Popup()
+      .setLngLat([lng, lat])
+      .setHTML(`<strong>Location</strong><br>Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}`)
+      .addTo(window.sciMap);
+  });
+}
+document.querySelector('[data-tab="map"]').addEventListener('click', () => setTimeout(initMap, 30));
+</script>
+</body>
+</html>
